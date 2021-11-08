@@ -16,32 +16,30 @@ subsubkeys:
 
 
 datasets_dict = {
-    'ln84': {
-        'ln84_raw': {
-            'name': 'ln84_raw',
-            'path': 'datasets/ln84_raw',
-            'multilabel': False,
-            'train_dir': 'train',
-            'val_dir': 'val',
-            'test_dir': 'val',
-            'num_classes': 2,
-            'classes': {
-                'miss': 0,
-                'hit': 1
-            }
-        },
-        'ln84_preprocessed': {
-            'name': 'ln84_preprocessed',
-            'path': 'datasets/ln84_preprocessed',
-            'multilabel': False,
-            'train_dir': 'train',
-            'val_dir': 'val',
-            'test_dir': 'val',
-            'num_classes': 2,
-            'classes': {
-                'miss': 0,
-                'hit': 1
-            }
+    'ln84_raw': {
+        'name': 'ln84_raw',
+        'path': 'datasets/ln84_raw',
+        'multilabel': False,
+        'train_dir': 'train',
+        'val_dir': 'val',
+        'test_dir': 'val',
+        'num_classes': 2,
+        'classes': {
+            'miss': 0,
+            'hit': 1
+        }
+    },
+    'ln84_preprocessed': {
+        'name': 'ln84_preprocessed',
+        'path': 'datasets/ln84_preprocessed',
+        'multilabel': False,
+        'train_dir': 'train',
+        'val_dir': 'val',
+        'test_dir': 'val',
+        'num_classes': 2,
+        'classes': {
+            'miss': 0,
+            'hit': 1
         }
     },
 

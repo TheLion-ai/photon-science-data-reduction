@@ -25,7 +25,7 @@ from torchvision.transforms.transforms import Grayscale
 from PIL import Image
 
 
-from utils.model_utils import load_trained
+from utils.model_utils import load_trained_model
 from model.lenet import LeNet
 
 from visualization.grad_cam import (
@@ -145,7 +145,7 @@ def save_gradient(filename, gradient):
     """
     gradient = gradient.cpu().numpy().transpose(1, 2, 0)
     
-    gradient = np.dot(np.abs(gradient[...,:3]), [1, 1, 1]) # to grayscale
+    gradient = np.dot(np.abs(gradient[...,:3]), [1, 1, 1]) # to grayscale, comment for lenet
     gradient -= gradient.min()
     gradient /= gradient.max()
     gradient *= 255.0
@@ -208,7 +208,7 @@ def demo1(image_paths, model_dict, visualizations, output_dir=''):
     # TODO: Fix demo1 calls
     print(model_dict['name'])
     model_path = model_dict['path']
-    backbone = model_dict['backbone']
+    arch = model_dict['arch']
     num_classes = model_dict['num_classes']
     img_size = model_dict['img_size']
     grayscale = model_dict['grayscale']
@@ -216,7 +216,6 @@ def demo1(image_paths, model_dict, visualizations, output_dir=''):
     classes = get_classtable(model_dict['classes'])
 
     top_k = num_classes
-    # TODO: dodać parametr do wizualizacji, rozmiar obrazka, czy grayscale
     img_names = [img.rsplit('/', 1)[-1] for img in image_paths]
     result_imgs = {k:{} for k in img_names}
     topk = num_classes
@@ -226,7 +225,7 @@ def demo1(image_paths, model_dict, visualizations, output_dir=''):
     # Model from torchvision
     # or from diffraction models
     # model = models.__dict__[arch](pretrained=True)
-    model = load_trained(backbone, model_path, num_classes, img_size, fine_tune=True)
+    model = load_trained_model(arch, model_path, num_classes, img_size, fine_tune=True)
     print("Let's use", torch.cuda.device_count(), "GPUs!")
     # model = nn.DataParallel(model)
     model.to(device)
@@ -265,7 +264,7 @@ def demo1(image_paths, model_dict, visualizations, output_dir=''):
                 vanilla = save_gradient(
                     filename=osp.join(
                         output_dir,
-                        "{}-{}-vanilla-{}.png".format(j, backbone.__name__, classes[ids[j, i]]),
+                        "{}-{}-vanilla-{}.png".format(j, arch.__name__, classes[ids[j, i]]),
                     ),
                     gradient=gradients[j],
                 )
@@ -293,7 +292,7 @@ def demo1(image_paths, model_dict, visualizations, output_dir=''):
                 deconvolution = save_gradient(
                     filename=osp.join(
                         output_dir,
-                        "{}-{}-deconvnet-{}.png".format(j, backbone.__name__, classes[ids[j, i]]),
+                        "{}-{}-deconvnet-{}.png".format(j, arch.__name__, classes[ids[j, i]]),
                     ),
                     gradient=gradients[j],
                 )
@@ -340,7 +339,7 @@ def demo1(image_paths, model_dict, visualizations, output_dir=''):
                     filename=osp.join(
                         output_dir,
                         "{}-{}-gradcam-{}-{}.png".format(
-                            j, backbone.__name__, target_layer, classes[ids[j, i]]
+                            j, arch.__name__, target_layer, classes[ids[j, i]]
                         ),
                     ),
                     gcam=regions[j, 0],
@@ -353,13 +352,13 @@ def demo1(image_paths, model_dict, visualizations, output_dir=''):
                     filename=osp.join(
                         output_dir,
                         "{}-{}-guided_gradcam-{}-{}.png".format(
-                            j, backbone.__name__, target_layer, classes[ids[j, i]]
+                            j, arch.__name__, target_layer, classes[ids[j, i]]
                         ),
                     ),
                     gradient=torch.mul(regions, gradients)[j],
                 )
                 result_imgs[img_names[j]]['guided_gradcam'][i] = guided_gradcam
-        
+    # with pytorch.no_grad():
     torch.cuda.empty_cache()
     gc.collect()
 

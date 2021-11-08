@@ -1,9 +1,10 @@
 """
 The module contains a set of functions for using the pretrained models.
 """
+# TODO: Add device selection, cpu/gpu
 from PIL import Image
 
-from torch import load
+from torch import load, device
 from torch.nn import Linear, Module, Sequential, Conv2d, Tanh, AvgPool2d, Flatten, AdaptiveAvgPool2d
 from torch.nn.functional import softmax
 from torchvision.models import alexnet, resnet50, vgg19
@@ -11,11 +12,12 @@ from torchvision.models import alexnet, resnet50, vgg19
 from model.lenet import LeNet
 from utils.data_utils import get_transforms
 
-def load_trained_model(backbone, model_path, num_classes, img_size, fine_tune=True):
+
+def load_trained_model(arch, model_path, num_classes, img_size, fine_tune=True, train=False):
     """[summary]
 
     Args:
-        backbone (class): The architecture the model was built with.
+        arch (class): The architecture the model was built with.
         model_path (str): The path to the pretrained model.
         num_classes (int): The number of classes distinguished by the model.
         img_size (int): Input image size required by the model.
@@ -26,32 +28,30 @@ def load_trained_model(backbone, model_path, num_classes, img_size, fine_tune=Tr
     """
     pretrained = False if model_path else True
 
-    if backbone.__name__ == 'LeNet':
+    if arch.__name__ == 'LeNet':
         model = LeNet(num_classes, img_size)
     else:
-        model = backbone(pretrained=pretrained)
+        model = arch(pretrained=pretrained)
 
-    model.classifier[-1] = Linear(model.classifier[-1].in_features, 5) # TODO: Remove hardcoding
+    model.classifier[-1] = Linear(model.classifier[-1].in_features, num_classes) # TODO: Remove hardcoding, fix num_classes to mathch pretrained model
     if model_path:
-        state_dict = load(model_path)['state_dict'] if backbone.__name__ not in ["LeNet"] else load(model_path)
+        state_dict = load(model_path)['state_dict'] if arch.__name__ not in [] else load(model_path)
         state_dict = {k.partition('model.')[2]: v for k,v in state_dict.items()}
         model.load_state_dict(state_dict)
 
-
-    if backbone.__name__ in ['alexnet', 'vgg19', 'LeNet']:
-        if fine_tune:
-            for param in model.features.parameters():
-                param.requires_grad = False
-        model.classifier[-1] = Linear(model.classifier[-1].in_features, num_classes)
-    elif backbone.__name__ in ['resnet50']:
-        # ResNet has different naming of layers
-        if fine_tune:
-            for param in model.parameters():
-                param.requires_grad = False
-        # Replace the last layer with a layer with desired no. of classes
-        model.fc = Linear(model.fc.in_features, num_classes)
-        model.fc.requires_grad = True
-
+    if train:
+        if arch.__name__ in ['alexnet', 'vgg19', 'LeNet']:
+            if fine_tune:
+                for param in model.features.parameters():
+                    model.classifier[-1] = Linear(model.classifier[-1].in_features, num_classes)
+        elif arch.__name__ in ['resnet50']:
+            # ResNet has different naming of layers
+            if fine_tune:
+                for param in model.parameters():
+                    param.requires_grad = False
+            # Replace the last layer with a layer with desired no. of classes
+            model.fc = Linear(model.fc.in_features, num_classes)
+            model.fc.requires_grad = True
 
     return model
 

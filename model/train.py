@@ -1,4 +1,4 @@
-from pytorch_lightning.callbacks import ModelCheckpoint
+from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import CSVLogger
 
@@ -19,7 +19,7 @@ def train(dataloader_params, model_params, trainer_params, model_id):
     model = DiffractionModel(**model_params)
 
     logger = CSVLogger(save_dir="logs/", name=model_id)
-
+    
     checkpoint_callback = ModelCheckpoint(
                             monitor="val_loss",
                             dirpath=f"logs/{model_id}",
@@ -27,8 +27,9 @@ def train(dataloader_params, model_params, trainer_params, model_id):
                             save_top_k=1,
                             mode="min",
                         )
+    early_stopping = EarlyStopping('val_loss', patience=50)
 
-    trainer = Trainer(**trainer_params, logger=logger, callbacks=[checkpoint_callback])
+    trainer = Trainer(**trainer_params, logger=logger, callbacks=[checkpoint_callback, early_stopping])
     trainer.fit(model, *dataloaders)
 
 if __name__ == '__main__':

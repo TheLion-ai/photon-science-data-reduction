@@ -8,7 +8,7 @@ from torch.autograd import Variable
 from torch.optim import SGD
 import os
 
-from misc_functions import get_example_params, recreate_image, save_image
+from visualization.misc_functions import get_example_params, recreate_image, save_image
 
 
 class InvertedRepresentation():
@@ -60,12 +60,12 @@ class InvertedRepresentation():
                 layer_output = x[0]
                 break
         return layer_output
-
+                                                #   (prep_img_base, 224, True, i, img_path[4:])
     def generate_inverted_image_specific_layer(self, input_image, img_size, target_layer=3):
         # Generate a random image which we will optimize
         opt_img = Variable(1e-1 * torch.randn(1, 3, img_size, img_size), requires_grad=True)
         # Define optimizer for previously created image
-        optimizer = SGD([opt_img], lr=1e4, momentum=0.9)
+        optimizer = SGD([opt_img], lr=1e3, momentum=0.9)
         # Get the output from the model after a forward pass until target_layer
         # with the input image (real image, NOT the randomly generated one)
         input_image_layer_output = \
@@ -98,7 +98,9 @@ class InvertedRepresentation():
             # Sum all to optimize
             loss = euc_loss + reg_alpha + reg_total_variation
             # Step
+            
             loss.backward()
+            torch.nn.utils.clip_grad_value_(self.model.parameters(), 1)
             optimizer.step()
             # Generate image every 5 iterations
             if i % 5 == 0:
@@ -112,6 +114,7 @@ class InvertedRepresentation():
             if i % 40 == 0:
                 for param_group in optimizer.param_groups:
                     param_group['lr'] *= 1/10
+        return recreated_im
 
 
 if __name__ == '__main__':

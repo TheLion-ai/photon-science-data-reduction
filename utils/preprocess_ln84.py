@@ -66,8 +66,8 @@ def split_ln84():
             in_path_preprocessed = os.path.join(root_source_path_preprocessed, img_name)
             out_path_preprocessed = os.path.join(root_target_path_preprocessed, dataset_name, label, img_name)
 
-            # os.replace(in_path_raw, out_path_raw)
-            # os.replace(in_path_preprocessed, out_path_preprocessed)
+            os.replace(in_path_raw, out_path_raw)
+            os.replace(in_path_preprocessed, out_path_preprocessed)
 
 if __name__ == '__main__':
     split_ln84()

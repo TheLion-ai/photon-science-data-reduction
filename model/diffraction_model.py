@@ -1,6 +1,7 @@
 from torch import load
 from torch.nn import Linear, CrossEntropyLoss, BCELoss
 from torch.optim import Adam
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torchvision.models import alexnet, resnet50, vgg19
 from pytorch_lightning import LightningModule
 from torchmetrics import Accuracy, MetricCollection, Precision, Recall
@@ -10,14 +11,14 @@ from utils.model_utils import load_trained_model
 
 class DiffractionModel(LightningModule):
 
-    def __init__(self, backbone=alexnet, encoder_path='', num_classes=5, img_size=224, tune_fc_only=True,  optimizer=Adam,
+    def __init__(self, arch=alexnet, encoder_path='', num_classes=5, img_size=224, tune_fc_only=True,  optimizer=Adam,
                 lr=1e-3, loss=BCELoss):
         """A model for training on diffraction images.
-        It can be built on one of the accepted backbones.
+        It can be built on one of the accepted architectures.
 
 
         Args:
-            backbone (class, optional): The architecture with which the model is built. Select from alexnet, vgg19, alexnet or LeNet. Defaults to alexnet.
+            arch (class, optional): The architecture with which the model is built. Select from alexnet, vgg19, alexnet or LeNet. Defaults to alexnet.
             encoder_path (str, optional): A path to the pretrained model with labels used as . Defaults to {}.
             num_classes (int, optional): The number of classes that the model is going to predict. Defaults to 5.
             img_size (int, optional): Image size requires of the model input. Defaults to 224.
@@ -28,8 +29,7 @@ class DiffractionModel(LightningModule):
         """
         super().__init__()
         self.__dict__.update(locals())
-        # TODO Add img_size
-        self.model = load_trained_model(backbone, encoder_path, num_classes, img_size)
+        self.model = load_trained_model(arch, encoder_path, num_classes, img_size)
 
         self.loss = loss()
         metrics = MetricCollection([Accuracy(), Precision(), Recall()])
@@ -52,7 +52,20 @@ class DiffractionModel(LightningModule):
         return loss
 
     def configure_optimizers(self):
-        return self.optimizer(self.model.parameters(), lr=self.lr)
+        optimizer = self.optimizer(self.model.parameters(), lr=self.lr)
+        scheduler = ReduceLROnPlateau(
+            optimizer,
+            mode='min',
+            factor=0.5,
+            patience=10,
+            min_lr=1e-20,
+            verbose=True
+        )
+        return {
+           'optimizer': optimizer,
+           'lr_scheduler': scheduler, # Changed scheduler to lr_scheduler
+           'monitor': 'val_loss'
+       }
 
     def validation_step(self, batch, batch_idx):
         x, y = batch

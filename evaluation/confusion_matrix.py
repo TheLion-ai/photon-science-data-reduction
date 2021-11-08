@@ -1,25 +1,25 @@
 import os
 
 import pandas as pd
-from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from dicts.datasets_dict import datasets_dict
-from dicts.pretrained_models_dict import pretrained_models_dict
-from utils.model_utils import load_trained, get_single_prediction, load_trained_model
-from utils.basic_utils import prepare_path
-from config import config
-
+from utils.model_utils import get_single_prediction, load_trained_model
+from utils.basic_utils import prepare_results_path
+from sklearn.metrics import f1_score, accuracy_score
+            
 
 def create_confusion_matrix(model_dict, dataset_dict):
 # Creates a confusion matrix for the test set given the dataset and the model
+    y_true = []
+    y_pred = []
+    
     confusion_matrix = np.zeros((dataset_dict['num_classes'], model_dict['num_classes']))
 
-    model = load_trained_model(model_dict['backbone'], model_dict['path'], model_dict['num_classes'], model_dict['img_size'])
+    model = load_trained_model(model_dict['arch'], model_dict['path'], model_dict['num_classes'], model_dict['img_size'])
     
-    img_root_path = os.path.join(dataset_dict['path'], 'test')
+    img_root_path = os.path.join(dataset_dict['path'], dataset_dict['test_dir'])
 
     for dir in os.listdir(img_root_path):
         dir_path = os.path.join(img_root_path, dir)
@@ -28,11 +28,18 @@ def create_confusion_matrix(model_dict, dataset_dict):
         for filename in filenames:
             img_path = os.path.join(dir_path, filename)
             # Get top prediction for a given image
-            _, _, top_pred = get_single_prediction(img_path, model)
+            _, _, top_pred = get_single_prediction(img_path, model, model_dict['img_size'], model_dict['grayscale'])
             # Get true label from dir name
             label = int(dir)
             # Add example to the desired place in the matrix
             confusion_matrix[label, top_pred] += 1
+            y_true.append(label)
+            y_pred.append(top_pred)
+
+    y_true = np.array(y_true)
+    y_pred = np.array(y_pred)
+    print('F1 score:', f1_score(y_true, y_pred, average='weighted', labels=[0, 1, 2, 3, 4]))
+    print('Accuracy: ', accuracy_score(y_true, y_pred))
             
     plt.figure(figsize=(15,10))
     # Get class names to label confusion matrix rows and columns
@@ -53,17 +60,10 @@ def create_confusion_matrix(model_dict, dataset_dict):
     plt.xlabel('Predicted label')
 
     fig_name = f'conf_matrix_{model_dict["name"]}_{dataset_dict["name"]}'
-    path = prepare_path(model_dict['name'], dataset_dict['name'])
+    path = prepare_results_path(model_dict, dataset_dict)
     path = os.path.join(path, fig_name)
     plt.savefig(path)
 
 
 if __name__ == '__main__':
-    
-    model = '224_lenet_from_scratch'
-    root_csv_path = f'prediction_csvs/{model}'
-
-    for dataset in datasets_dict['diffranet']:
-        dataset = datasets_dict['diffranet'][dataset]
-        create_confusion_matrix(pretrained_models_dict[model], dataset)
-
+    pass

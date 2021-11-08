@@ -16,121 +16,46 @@ num of classes and ordered class names
 - target layer for visualizations
 """
 
-from torchvision.models import alexnet, resnet50, vgg19
-from model.lenet import LeNet
+import os
 
+from dicts.datasets_dict import datasets_dict
+from dicts.arch_dict import arch_dict
+
+
+logs_dir = 'logs'
 
 pretrained_models_dict = {
     'imagenet': {
         'name': 'imagenet',
     },
-    'alexnet_all_layers': {
-        'name': 'alexnet_all_layers',
-        'path': '/home/bk/sfx/model/logs/alexnet_full_tune_imagenet-epoch=12-val_loss=0.18.ckpt',
-        'backbone': alexnet,
-        'num_classes': 5,
-        'classes': {
-                'blank': 0,
-                'no-crystal': 1,
-                'weak': 2,
-                'good': 3,
-                'strong': 4
-        },
-        'img_size': 224,
-        'grayscale': False,
-        'target_layer': 'avgpool'
-    },
-    'alexnet_fc': {
-        'name': 'alexnet_fc',
-        'path': '/home/bk/sfx/model/logs/alexnet_fine_tune_imagenet-epoch=22-val_loss=0.09.ckpt',
-        'backbone': alexnet,
-        'num_classes': 5,
-        'classes': {
-                'blank': 0,
-                'no-crystal': 1,
-                'weak': 2,
-                'good': 3,
-                'strong': 4
-        },
-        'img_size': 224,
-        'grayscale': False,
-        'target_layer': 'avgpool'
-    },
-    'alexenet_diffranet': {
-        'name': 'alexnet_diffranet',
-        'path': '/home/bk/sfx/model/logs/alexnet_fine_tune_diffranet-epoch=22-val_loss=0.22.ckpt',
-        'backbone': alexnet,
-        'num_classes': 2,
-        'classes': {
-            'no_diffraction': 0,
-            'diffraction': 1
-        },
-        'img_size': 224,
-        'grayscale': False,
-        'target_layer': 'avgpool'
-    },
-    'lenet_32': {
-        'name': 'lenet_32',
-        'path': "/home/bk/sfx/model/logs/32_LeNet_tune_fc_onlyFalse_diffranet_synthetic/-epoch=1497-val_loss=0.13-accuracy=0.00.tmp_end.ckpt",
-        'backbone': LeNet,
-        'num_classes': 5,
-        'classes': {
-                'blank': 0,
-                'no-crystal': 1,
-                'weak': 2,
-                'good': 3,
-                'strong': 4
-        },
-        'img_size': 32,
-        'grayscale': True,
-        'target_layer': 'features.7'
-    },
-    'lenet_224': {
-        'name': 'lenet_224',
-        'path': "/home/bk/sfx/model/logs/224_LeNet_tune_fc_onlyFalse_diffranet_synthetic/-epoch=182-val_loss=0.96-accuracy=0.00.tmp_end.ckpt",
-        'backbone': LeNet,
-        'num_classes': 5,
-        'classes': {
-                'blank': 0,
-                'no-crystal': 1,
-                'weak': 2,
-                'good': 3,
-                'strong': 4
-        },
-        'img_size': 224,
-        'grayscale': True,
-        'target_layer': 'features.7'
-    },
-    'vgg19_fc': {
-        'name': 'vgg19_fc',
-        'path': "/home/bk/sfx/model/logs/2009_1154vgg19_tune_fc_onlyTrue_diffranet_synthetic/-epoch=02-val_loss=0.09-accuracy=0.00.ckpt",
-        'backbone': vgg19,
-        'num_classes': 5,
-        'classes': {
-                'blank': 0,
-                'no-crystal': 1,
-                'weak': 2,
-                'good': 3,
-                'strong': 4
-        },
-        'img_size': 224,
-        'grayscale': False,
-        'target_layer': 'avgpool'
-    },
-    'vgg19_all_layers': {
-        'name': 'vgg19_all_layers',
-        'path': "/home/bk/sfx/model/logs/2009_1154vgg19_tune_fc_onlyFalse_diffranet_synthetic/-epoch=08-val_loss=0.09-accuracy=0.00.ckpt",
-        'backbone': vgg19,
-        'num_classes': 5,
-        'classes': {
-                'blank': 0,
-                'no-crystal': 1,
-                'weak': 2,
-                'good': 3,
-                'strong': 4
-        },
-        'img_size': 224,
-        'grayscale': False,
-        'target_layer': 'avgpool'
-    }
 }
+
+pretrained_models = {
+    'model_0': ('lenet', 'all_layers', 'diffranet_synthetic', 'some text'),
+    'model_1': ('alexnet', 'fc', 'diffranet_synthetic', 'some text'),
+    'model_2': ('alexnet', 'all_layers', 'diffranet_synthetic', 'some text'),
+    'model_3': ('alexnet', 'all_layers', 'ln84_preprocessed', 'some text'),
+    'model_4': ('vgg19', 'fc', 'diffranet_synthetic', 'some text'),
+    'model_5': ('vgg19', 'all_layers', 'diffranet_synthetic', 'some text'),
+    'model_6': ('vgg19', 'fc', 'ln84_preprocessed', 'some text')
+}
+
+for pretrained_model in pretrained_models.values():
+
+    arch, trainable_layers, dataset, path, info = pretrained_model
+    dataset_dict = datasets_dict[dataset]
+    model_dict = {}
+
+    name = f"{arch}-{trainable_layers}-{dataset}"
+    model_dict['name'] = name
+
+    model_dict['trainable_layers'] = trainable_layers
+    model_dict['path'] = os.path.join(logs_dir, name, f"{name}.ckpt")
+    model_dict['arch'] = arch
+
+    for k in ['num_classes', 'classes']:
+        model_dict[k] = dataset_dict[k]
+        
+    for k in ['arch', 'img_size', 'grayscale', 'target_layer', 'layers']:
+        model_dict[k] = arch_dict[arch]
+    pretrained_models_dict[name] = model_dict

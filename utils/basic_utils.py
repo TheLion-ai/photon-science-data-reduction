@@ -1,6 +1,6 @@
 import os
 
-def prepare_path(model_name, dataset_name):
+def prepare_results_path(model_dict, dataset_dict):
     """Create a path to store experiment results. If a folder in the path doesn't exist, it is created.
 
     Args:
@@ -11,6 +11,8 @@ def prepare_path(model_name, dataset_name):
         str: An existing path to experiment results for a given model and a dataset.
     """
     path = ''
+    model_name = model_dict['name']
+    dataset_name = dataset_dict['name']
     for name in ['results', model_name, dataset_name]:
         path = os.path.join(path, name)
         if not os.path.isdir(path):
